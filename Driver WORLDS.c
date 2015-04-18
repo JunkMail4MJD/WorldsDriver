@@ -99,8 +99,8 @@ task main() {
 		stickBValue  = getJoystickValue(ChB);
 		if ((stickBValue <= 15) && (stickBValue >= -15) ) stickBValue = 0;
 
-		if (stickBValue >=0 ) 	 	stickBValue = (stickBValue / 10) * (stickBValue / 10);
-		else stickBValue = 		- (stickBValue / 10) * (stickBValue / 10);
+		if (stickBValue >=0 ) 	 	stickBValue = (stickBValue / 10) * (stickBValue / 10) * 2;
+		else stickBValue = 		- (stickBValue / 10) * (stickBValue / 10) * 2;
 
 
 
@@ -153,16 +153,16 @@ task main() {
 		/***************************************************************************************************************/
 		//CLAW MOTOR
 		if(getJoystickValue(BtnLUp) > 0)   {  //OPEN
-			globalClawPosition+=1;
+			globalClawPosition+=2;
 			//			if (globalClawPosition > 89) globalClawPosition = 90;
 			//			setMotorTarget(clawMotor, globalClawPosition, 25);
-			setMotorSpeed(clawMotor, 50);
+			setMotorSpeed(clawMotor, 70);
 		}
 		else if(getJoystickValue(BtnLDown) > 0)   {  //CLOSE
-			globalClawPosition-=1;
+			globalClawPosition-=2;
 			//			if (globalClawPosition < 40) globalClawPosition = 40;
 			//			setMotorTarget(clawMotor, globalClawPosition, 25);
-			setMotorSpeed(clawMotor, -50);
+			setMotorSpeed(clawMotor, -70);
 		}
 		else {
 			setMotorSpeed(clawMotor, 0);
@@ -212,7 +212,6 @@ task main() {
 task displayMyMotorPositions(){
 
 	float clawEncoderValue, wristEncoderValue, armEncoderValue, calibratedGyroDegrees, calibratedGyroHeading;
-	float leftMotorValue, rightMotorValue;
 
 
 
@@ -224,17 +223,14 @@ task displayMyMotorPositions(){
 		clawEncoderValue 		= getMotorEncoder(clawMotor);
 		wristEncoderValue 	= getMotorEncoder(wristMotor);
 		armEncoderValue 		= getMotorEncoder(armMotor);
-		leftMotorValue			= getMotorEncoder(leftMotor)
-		rightMotorValue			= getMotorEncoder(rightMotor);
 
 		eraseDisplay();
 		displayString(0, "claw:  %f3", clawEncoderValue);
 		displayString(1, "wrist: %f3", wristEncoderValue);
 		displayString(2, "arm:   %f3", armEncoderValue);
-		displayString(3, "L: %f3  R: %f3", leftMotorValue, rightMotorValue);
 		displayString(4, "d: %f3  h: %f3", calibratedGyroDegrees, calibratedGyroHeading);
 
-		wait1Msec(500);
+		wait1Msec(1000);
 	}
 }
 
