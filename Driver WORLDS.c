@@ -12,6 +12,8 @@ void moveToNeutralPosition();
 void moveToLowerStackingPosition();
 void moveToUpperStackingPosition();
 task displayMyMotorPositions();
+void driveStraightForward();
+void driveStraightBackward();
 
 //Global Variable & Constant declarations
 
@@ -21,8 +23,40 @@ int const STACK_BLOCKS_LOW_WRIST = 250, 	STACK_BLOCKS_LOW_ARM = 40;
 
 int const STACK_BLOCKS_HIGH_WRIST = 152, 	STACK_BLOCKS_HIGH_ARM = 243;
 
-float globalArmPosition = 0, globalClawPosition = 0, globalWristPosition = 0;
+int const ARM_UPPER_LIMIT = 970, ARM_LOWER_LIMIT = 0;
 
+int const WRIST_UPPER_LIMIT = 528, WRIST_LOWER_LIMIT = -17;
+
+float globalClawPosition, globalArmPosition, globalWristPosition;
+
+bool driveForwardPressed = false, driveBackwardPressed = false;
+
+
+void moveToAimingPosition(){
+
+	int armPowerLevel = 60;
+	setMotorTarget(armMotor,  	 REVERSE_GRIP_ARM, 		armPowerLevel);
+	setMotorTarget(wristMotor,   REVERSE_GRIP_WRIST , 	armPowerLevel);
+}
+
+void moveToNeutralPosition(){
+
+	int armPowerLevel = 60;
+	setMotorTarget(armMotor,  	 0, 		armPowerLevel);
+	setMotorTarget(wristMotor,   0, 	armPowerLevel);
+}
+
+void moveToLowerStackingPosition(){
+	int armPowerLevel = 60;
+	setMotorTarget(armMotor,  	 STACK_BLOCKS_LOW_ARM, 		armPowerLevel);
+	setMotorTarget(wristMotor,   STACK_BLOCKS_LOW_WRIST, 	armPowerLevel);
+}
+
+void moveToUpperStackingPosition(){
+	int armPowerLevel = 60;
+	setMotorTarget(armMotor,  	 STACK_BLOCKS_HIGH_ARM, 		armPowerLevel);
+	setMotorTarget(wristMotor,   STACK_BLOCKS_HIGH_WRIST, 	armPowerLevel);
+}
 
 task main() {
 
@@ -51,34 +85,47 @@ task main() {
 		/***************************************************************************************************************/
 		//Joystick Control:
 
-		stickAValue  = getJoystickValue(ChA);
-		if ((stickAValue <= 15) && (stickAValue >= -15) ) stickAValue = 0;
+		/***************************************************************************************************************/
+		//Driving:
 
-		stickBValue  = getJoystickValue(ChB);
-		if ((stickBValue <= 15) && (stickBValue >= -15) ) stickBValue = 0;
+		if(getJoystickValue(BtnEUp) > 0)   {  //Drive Straight Forward
+			driveStraightForward();
+		}
+		else if(getJoystickValue(BtnEDown) > 0)   {  //Drive Straight Backward
+			driveStraightBackward();
+		}
+		else {
+			driveForwardPressed = false;
+			driveBackwardPressed = false;
 
-		if (stickBValue >=0 ) 	 	stickBValue = (stickBValue / 10) * (stickBValue / 10) * 2;
-		else stickBValue = 		- (stickBValue / 10) * (stickBValue / 10) * 2;
+			stickAValue  = getJoystickValue(ChA);
+			if ((stickAValue <= 15) && (stickAValue >= -15) ) stickAValue = 0;
+
+			stickBValue  = getJoystickValue(ChB);
+			if ((stickBValue <= 15) && (stickBValue >= -15) ) stickBValue = 0;
+
+			if (stickBValue >=0 ) 	 	stickBValue = (stickBValue / 10) * (stickBValue / 10) * 2;
+			else stickBValue = 		- (stickBValue / 10) * (stickBValue / 10) * 2;
 
 
 
-		leftMotorSpeed = stickAValue - stickBValue;
-		rightMotorSpeed = stickAValue + stickBValue;
+			leftMotorSpeed = stickAValue - stickBValue;
+			rightMotorSpeed = stickAValue + stickBValue;
 
-		if ( leftMotorSpeed > 100) leftMotorSpeed = 100;
-		if ( leftMotorSpeed < -100) leftMotorSpeed = -100;
+			if ( leftMotorSpeed > 100) leftMotorSpeed = 100;
+			if ( leftMotorSpeed < -100) leftMotorSpeed = -100;
 
-		if ( rightMotorSpeed > 100) rightMotorSpeed = 100;
-		if ( rightMotorSpeed < -100) rightMotorSpeed = -100;
+			if ( rightMotorSpeed > 100) rightMotorSpeed = 100;
+			if ( rightMotorSpeed < -100) rightMotorSpeed = -100;
 
-		if (leftMotorSpeed >=0 ) 	 	leftMotorSpeed = (leftMotorSpeed / 10) * (leftMotorSpeed / 10);
-		else leftMotorSpeed = 		- (leftMotorSpeed / 10) * (leftMotorSpeed / 10);
-		if (rightMotorSpeed >=0 ) 	rightMotorSpeed = (rightMotorSpeed / 10) * (rightMotorSpeed / 10);
-		else rightMotorSpeed = 		- (rightMotorSpeed / 10) * (rightMotorSpeed / 10);
+			if (leftMotorSpeed >=0 ) 	 	leftMotorSpeed = (leftMotorSpeed / 10) * (leftMotorSpeed / 10);
+			else leftMotorSpeed = 		- (leftMotorSpeed / 10) * (leftMotorSpeed / 10);
+			if (rightMotorSpeed >=0 ) 	rightMotorSpeed = (rightMotorSpeed / 10) * (rightMotorSpeed / 10);
+			else rightMotorSpeed = 		- (rightMotorSpeed / 10) * (rightMotorSpeed / 10);
 
-		setMotorSpeed(leftMotor, leftMotorSpeed);
-		setMotorSpeed(rightMotor, rightMotorSpeed);
-
+			setMotorSpeed(leftMotor, leftMotorSpeed);
+			setMotorSpeed(rightMotor, rightMotorSpeed);
+		}
 
 		/***************************************************************************************************************/
 		//WRIST MOTOR
@@ -90,9 +137,24 @@ task main() {
 		if (wristMotorSpeed >=0 ) 	 	wristMotorSpeed = (wristMotorSpeed / 10) * (wristMotorSpeed / 10);
 		else wristMotorSpeed = 		- (wristMotorSpeed / 10) * (wristMotorSpeed / 10);
 
+		globalWristPosition = getMotorEncoder(wristMotor);
 
-		setMotorSpeed(wristMotor, wristMotorSpeed );
-
+		if ((wristMotorSpeed > 0) && (globalWristPosition >= WRIST_UPPER_LIMIT)){
+			setMotorTarget(wristMotor, WRIST_UPPER_LIMIT, 70);
+		}
+		else if ((wristMotorSpeed < 0) && (globalWristPosition <= WRIST_LOWER_LIMIT)) {
+			setMotorTarget(wristMotor, WRIST_LOWER_LIMIT, 70);
+		}
+		else {
+			//slow things down if we are near the limit of wrist movement
+			if ( abs(globalWristPosition - WRIST_LOWER_LIMIT) < 10) {
+				wristMotorSpeed = wristMotorSpeed / 4;
+			}
+			if ( abs(globalWristPosition - WRIST_UPPER_LIMIT) < 10) {
+				wristMotorSpeed = wristMotorSpeed / 4;
+			}
+			setMotorSpeed(wristMotor, wristMotorSpeed );
+		}
 
 		/***************************************************************************************************************/
 		//ARM MOTOR
@@ -104,8 +166,24 @@ task main() {
 		if (armMotorSpeed >=0 ) 	 	armMotorSpeed = (armMotorSpeed / 10) * (armMotorSpeed / 10);
 		else armMotorSpeed = 		- (armMotorSpeed / 10) * (armMotorSpeed / 10);
 
-		setMotorSpeed(armMotor, armMotorSpeed );
+		globalArmPosition = getMotorEncoder(armMotor);
 
+		if ((armMotorSpeed > 0) && (globalArmPosition >= ARM_UPPER_LIMIT)){
+			setMotorTarget(armMotor, ARM_UPPER_LIMIT, 70);
+		}
+		else if ((armMotorSpeed < 0) && (globalArmPosition <= ARM_LOWER_LIMIT)) {
+			setMotorTarget(armMotor, ARM_LOWER_LIMIT, 70);
+		}
+		else {
+			//slow things down if we are near the limit of arm movement
+			if ( abs(globalArmPosition - ARM_LOWER_LIMIT) < 10){
+				armMotorSpeed= armMotorSpeed/ 4;
+			}
+			if ( abs(globalArmPosition - ARM_UPPER_LIMIT) < 10){
+				armMotorSpeed= armMotorSpeed/ 4;
+			}
+			setMotorSpeed(armMotor, armMotorSpeed);
+		}
 
 
 		/***************************************************************************************************************/
@@ -115,47 +193,39 @@ task main() {
 		}
 		else if(getJoystickValue(BtnLDown) > 0)   {  //OPEN
 			globalClawPosition = getMotorEncoder(clawMotor);
-			if (globalClawPosition <= -89) {
-				setMotorTarget(clawMotor, -89, 70);
+			if (globalClawPosition <= -87) {
+				setMotorTarget(clawMotor, -87, 70);
 			}
 			else {
 				setMotorSpeed(clawMotor, -70);
 			}
 		}
 		else {
-			setMotorSpeed(clawMotor, 0);
+			globalClawPosition = getMotorEncoder(clawMotor);
+			setMotorTarget(clawMotor, globalClawPosition, 90);
 		}
 
 
 		/***************************************************************************************************************/
 		//Buttons to move our Arm for Us quickly to other positions
-		if(getJoystickValue(BtnEUp) > 0)   {  //UP
+		if(getJoystickValue(BtnFUp) > 0)   {  //UP
 			moveToAimingPosition();
-			wait1Msec(50);
 		}
-		if(getJoystickValue(BtnEDown) > 0)   {  //GRAB a Block
+		if(getJoystickValue(BtnFDown) > 0)   {  //GRAB a Block
 			moveToNeutralPosition();
-			wait1Msec(50);
-		}
-
-		/***************************************************************************************************************/
-		// Reset button to move the robot back to neutral
-		if(getJoystickValue(BtnRUp) > 0)   {
-			moveToNeutralPosition();
-			wait1Msec(50);
 		}
 
 		/***************************************************************************************************************/
 		//Block Stacking Positions
 		//Buttons to move our Arm for Us quickly to other positions
-		if(getJoystickValue(BtnFUp) > 0)   {  //Upper Stacking Position
+		if(getJoystickValue(BtnRUp) > 0)   {  //Upper Stacking Position
 			moveToUpperStackingPosition();
-			wait1Msec(50);
 		}
-		if(getJoystickValue(BtnFDown) > 0)   {  //Lower Stacking Position
+		if(getJoystickValue(BtnRDown) > 0)   {  //Lower Stacking Position
 			moveToLowerStackingPosition();
-			wait1Msec(50);
 		}
+		wait1Msec(50);   // Give actions time to make progress and prevent over-control from taking inputs too fast
+
 	}
 
 }
@@ -186,28 +256,97 @@ task displayMyMotorPositions(){
 	}
 }
 
-void moveToAimingPosition(){
 
-	int armPowerLevel = 60;
-	setMotorTarget(armMotor,  	 REVERSE_GRIP_ARM, 		armPowerLevel);
-	setMotorTarget(wristMotor,   REVERSE_GRIP_WRIST , 	armPowerLevel);
+
+void driveStraightForward(){
+
+	long 		timeIn1mSec;
+	float 	leftMotorValue, rightMotorValue, drivePowerLevel_F, currentPowerLevel_F;
+	int			drivePowerLevel, currentPowerLevel;
+
+	driveBackwardPressed = false;
+
+	if (!driveForwardPressed) {
+		clearTimer(T1);
+		driveForwardPressed = true;
+		resetMotorEncoder(leftMotor);
+		resetMotorEncoder(rightMotor);
+	}
+
+	leftMotorValue 		= getMotorEncoder(leftMotor);
+	rightMotorValue 	= getMotorEncoder(rightMotor);
+
+	drivePowerLevel = 100;
+	drivePowerLevel_F =  (float) drivePowerLevel;
+	timeIn1mSec = time1(T1);
+	if 			( timeIn1mSec <  50) currentPowerLevel_F = drivePowerLevel_F / 4.0;
+	else if ( timeIn1mSec < 100) currentPowerLevel_F = drivePowerLevel_F / 2.0;
+	else if ( timeIn1mSec < 150) currentPowerLevel_F = drivePowerLevel_F * (3 / 4);
+	else currentPowerLevel_F = drivePowerLevel_F;
+
+	currentPowerLevel = (int) currentPowerLevel_F;
+
+	if ( (abs(leftMotorValue) - 3) > abs(rightMotorValue) ) {
+		setMotorSpeed(rightMotor, currentPowerLevel);
+		currentPowerLevel = (int) ( currentPowerLevel_F * .94);
+		setMotorSpeed(leftMotor, currentPowerLevel);
+
+	}
+	else if ( (abs(rightMotorValue) - 3) > abs(rightMotorValue) ) {
+		setMotorSpeed(leftMotor, currentPowerLevel);
+		currentPowerLevel = (int) ( currentPowerLevel_F * .94);
+		setMotorSpeed(rightMotor, currentPowerLevel);
+	}
+	else {
+		setMotorSpeed(leftMotor, currentPowerLevel);
+		setMotorSpeed(rightMotor, currentPowerLevel);
+	}
+
+
 }
 
-void moveToNeutralPosition(){
+void driveStraightBackward(){
 
-	int armPowerLevel = 60;
-	setMotorTarget(armMotor,  	 0, 		armPowerLevel);
-	setMotorTarget(wristMotor,   0, 	armPowerLevel);
-}
+	long 		timeIn1mSec;
+	float 	leftMotorValue, rightMotorValue, drivePowerLevel_F, currentPowerLevel_F;
+	int			drivePowerLevel, currentPowerLevel;
 
-void moveToLowerStackingPosition(){
-	int armPowerLevel = 60;
-	setMotorTarget(armMotor,  	 STACK_BLOCKS_LOW_ARM, 		armPowerLevel);
-	setMotorTarget(wristMotor,   STACK_BLOCKS_LOW_WRIST, 	armPowerLevel);
-}
+	driveForwardPressed = false;
 
-void moveToUpperStackingPosition(){
-	int armPowerLevel = 60;
-	setMotorTarget(armMotor,  	 STACK_BLOCKS_HIGH_ARM, 		armPowerLevel);
-	setMotorTarget(wristMotor,   STACK_BLOCKS_HIGH_WRIST, 	armPowerLevel);
+	if (!driveBackwardPressed) {
+		clearTimer(T1);
+		driveBackwardPressed = true;
+		resetMotorEncoder(leftMotor);
+		resetMotorEncoder(rightMotor);
+	}
+
+	leftMotorValue 		= getMotorEncoder(leftMotor);
+	rightMotorValue 	= getMotorEncoder(rightMotor);
+
+	drivePowerLevel = -100;
+	drivePowerLevel_F =  (float) drivePowerLevel;
+	timeIn1mSec = time1(T1);
+	if 			( timeIn1mSec <  50) currentPowerLevel_F = drivePowerLevel_F / 4.0;
+	else if ( timeIn1mSec < 100) currentPowerLevel_F = drivePowerLevel_F / 2.0;
+	else if ( timeIn1mSec < 150) currentPowerLevel_F = drivePowerLevel_F * (3 / 4);
+	else currentPowerLevel_F = drivePowerLevel_F;
+
+	currentPowerLevel = (int) currentPowerLevel_F;
+
+	if ( (abs(leftMotorValue) - 3) > abs(rightMotorValue) ) {
+		setMotorSpeed(rightMotor, currentPowerLevel);
+		currentPowerLevel = (int) ( currentPowerLevel_F * .94);
+		setMotorSpeed(leftMotor, currentPowerLevel);
+
+	}
+	else if ( (abs(rightMotorValue) - 3) > abs(rightMotorValue) ) {
+		setMotorSpeed(leftMotor, currentPowerLevel);
+		currentPowerLevel = (int) ( currentPowerLevel_F * .94);
+		setMotorSpeed(rightMotor, currentPowerLevel);
+	}
+	else {
+		setMotorSpeed(leftMotor, currentPowerLevel);
+		setMotorSpeed(rightMotor, currentPowerLevel);
+	}
+
 }
